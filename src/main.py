@@ -136,7 +136,7 @@ def calibrateCurioni():
                 tt.reflecCoeff = tt.normalizeVector(data)
                 isDataLoaded = True
                 
-                ComputeTT(True)  
+                ComputeTT(False)  
                 estDensity[i] = estBulkDensityStr.get()
                 outFile.write("%s,%.1f,%.1f\n" % (soilList[i], obsDensity[i], estDensity[i]))
     outFile.close() 
@@ -209,7 +209,7 @@ def ComputeTT(isShow = True):
     
     if (isShow): 
         cleanDisplay()
-        drawWaveForm(True)
+        drawWaveForm(False)
         drawRegressionLines()
         showDisplay()
       
