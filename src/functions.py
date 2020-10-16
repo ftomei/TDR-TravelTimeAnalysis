@@ -44,6 +44,3 @@ def getBulkDensityCurioni(bulkPermittivity, v1, vr, a, b, c):
 def getWaterContentCurioni(bulkPermittivity, bulkDensity, a, b):
     return (1/b)*(sqrt(bulkPermittivity)*(waterDensity/bulkDensity) - a)
     
-    
-    
-    

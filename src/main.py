@@ -10,7 +10,6 @@
 from __future__ import print_function, division
 
 from readDataFile import readDataFile, readGenericDataFile
-from travelTime import computeTravelTime
 from functions import *
 from plot import *
 
@@ -166,7 +165,7 @@ def ComputeTT(isShow = True):
     nrPoints = len(tt.reflecCoeff)
     tt.WF_parameters(vp, probeHandle, windowBegin, windowWidth, nrPoints)
 
-    if not computeTravelTime(probeHandle, handlePermittivity, vp):
+    if not tt.computeTravelTime(probeHandle, handlePermittivity, vp):
         showerror("Warning", "Wrong data, header or parameter")
         return
     
@@ -213,7 +212,7 @@ def ComputeTT(isShow = True):
         drawRegressionLines()
         showDisplay()
       
-      
+
 def main():        
     vpStr.set(0.99)
     probeLenghtStr.set(0.15)
