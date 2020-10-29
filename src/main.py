@@ -11,6 +11,7 @@ from __future__ import print_function, division
 
 from readDataFile import readDataFile, readGenericDataFile
 from functions import *
+from Marquardt import Marquardt
 from plot import *
 
 import os
@@ -113,12 +114,13 @@ def calibrateCurioni():
     soilList = []
     fileList = []
     obsDensity = np.zeros(len(x))
-    estDensity = np.zeros(len(x))
+    #estDensity = np.zeros(len(x))
     for i in range(len(x)):
         soilList.append(x[i][0])
         fileList.append(soilList[i] + ".dat")
         obsDensity[i] = x[i][1] 
     
+    waveForm = []
     nrHeaderValues = int(headerNrStr.get())
     outFile= open(myPath + "output.csv","w")
     files = os.listdir(myPath)
@@ -135,9 +137,21 @@ def calibrateCurioni():
                 tt.reflecCoeff = tt.normalizeVector(data)
                 isDataLoaded = True
                 
-                ComputeTT(False)  
-                estDensity[i] = estBulkDensityStr.get()
-                outFile.write("%s,%.1f,%.1f\n" % (soilList[i], obsDensity[i], estDensity[i]))
+                w = ComputeTT(False) 
+                waveForm.append(w) 
+      
+    #Marquardt
+    a = float(aStr.get())
+    b = float(bStr.get())
+    c = float(cStr.get())
+    v0 = np.array([a, b, c], float)
+    vmin = np.array([0, 0, 0], float)
+    vmax = np.array([1, 1, 2], float)
+    v, estDensity = Marquardt(v0, vmin, vmax, waveForm, obsDensity)
+    
+    #Print
+    for i in range(len(obsDensity)):
+        outFile.write("%s,%.1f,%.1f\n" % (soilList[i], obsDensity[i], estDensity[i]))
     outFile.close() 
 
             
@@ -149,7 +163,7 @@ def ComputeTT(isShow = True):
     #read parameters
     vp = float(vpStr.get())                     
 	#fraction of speed of light [-]
-    probleLenght = float(probeLenghtStr.get())
+    probeLenght = float(probeLenghtStr.get())
     windowBegin = float(windowBeginStr.get())
     windowWidth = float(windowWidthStr.get())
     probeHandle = float(probleHandleStr.get())
@@ -169,20 +183,20 @@ def ComputeTT(isShow = True):
         showerror("Warning", "Wrong data, header or parameter")
         return
     
-    travelTime = tt.p2.x - tt.p1.x
-    bulkPermittivity = getBulkPermittivity(probleLenght, travelTime, vp)
+    w = WaveForm()
+    w.travelTime = tt.p2.x - tt.p1.x
+    w.probeLenght = probeLenght
+    w.vp = vp
+    bulkPermittivity = getBulkPermittivity(w)
     wcTopp = getWaterContentTopp(bulkPermittivity)
     wcMalicki = getWaterContentMalicki(bulkPermittivity, bulkDensity)
     wcMixModel = getWaterContentMixModel(bulkPermittivity, bulkDensity, 
                                          solidPermittivity, liquidPermittivity, geomParameter)
 
-    y1 = tt.p1.y
-    y2 = tt.p2.y
-    y3 = tt.p3.y
-    v1 = abs(y2-y1)
-    vf = abs(y3+1)
-    vr = v1/vf
-    bdCurioni = getBulkDensityCurioni(bulkPermittivity, v1, vr, a, b, c)
+    w.v1 = abs(tt.p2.y - tt.p1.y)
+    w.vf = abs(tt.p3.y + 1)
+    w.vr = w.v1 / w.vf
+    bdCurioni = getBulkDensityCurioni(w, a, b, c)
     wcCurioni = getWaterContentCurioni(bulkPermittivity, bdCurioni, a, b)
     
      #print results
@@ -193,12 +207,12 @@ def ComputeTT(isShow = True):
     x2 = tt.p2.x * (1E09)
     point2XStr.set(format(x2, '.3f'))
     
-    ttStr.set(format(travelTime * (1E09), '.3f'))
+    ttStr.set(format(w.travelTime * (1E09), '.3f'))
     bulkPermittivityStr.set(format(bulkPermittivity, '.2f'))
     
-    v1Str.set(format(v1, '.3f'))
-    vfStr.set(format(vf, '.3f'))
-    ratioStr.set(format(vr, '.3f'))
+    v1Str.set(format(w.v1, '.3f'))
+    vfStr.set(format(w.vf, '.3f'))
+    ratioStr.set(format(w.vr, '.3f'))
     estBulkDensityStr.set(format(bdCurioni, ".1f"))
     
     wcToppStr.set(format(wcTopp, ".3f"))
@@ -211,13 +225,15 @@ def ComputeTT(isShow = True):
         drawWaveForm(False)
         drawRegressionLines()
         showDisplay()
+    
+    return w
       
 
 def main():        
     vpStr.set(0.99)
-    probeLenghtStr.set(0.15)
+    probeLenghtStr.set(0.1)
     windowBeginStr.set(0.)
-    windowWidthStr.set(5.)
+    windowWidthStr.set(3.)
     probleHandleStr.set(0.120)
     handlePermittivityStr.set(1.7)
     point0XStr.set(0)
