@@ -156,9 +156,10 @@ def calibrateCurioni():
     
     #Print
     outFile.write("%.3f,%.3f,%.3f\n" %(v[0],v[1],v[2]))
-    outFile.write("soil,obs.density,est.density\n")
+    outFile.write("soil,bulkPermittivity,v1,vr,obs.density,est.density\n")
     for i in range(len(obsDensity)):
-        outFile.write("%s,%.1f,%.1f\n" % (soilList[i], obsDensity[i], estDensity[i]))
+        k = getBulkPermittivity(waveForm[i])
+        outFile.write("%s,%.1f,%.3f,%.3f,%.1f,%.1f\n" % (soilList[i], k, waveForm[i].v1, waveForm[i].vr, obsDensity[i], estDensity[i]))
     outFile.close() 
 
             
@@ -342,9 +343,9 @@ def main():
     # Curioni parameter
     posY_col2 = 225
     posX_col2 = 320
-    bdParamLabel = Label(mainWindow, text="Curioni param." , font = "helvetica 10 bold", fg="red")
+    bdParamLabel = Label(mainWindow, text="Curioni parameters" , font = "helvetica 10 bold", fg="red")
     bdParamLabel.place(x=300, y=posY_col2)
-    buttonCurioni = Button(mainWindow, text="Calibrate", command=calibrateCurioni)
+    buttonCurioni = Button(mainWindow, text="Fitting", command=calibrateCurioni)
     buttonCurioni.place(x=430, y=posY_col2-2)
     
     posY_col2 += 35
