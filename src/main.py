@@ -155,6 +155,8 @@ def calibrateCurioni():
     cStr.set("{0:.3f}".format(v[2]))
     
     #Print
+    outFile.write("%.3f,%.3f,%.3f\n" %(v[0],v[1],v[2]))
+    outFile.write("soil,obs.density,est.density\n")
     for i in range(len(obsDensity)):
         outFile.write("%s,%.1f,%.1f\n" % (soilList[i], obsDensity[i], estDensity[i]))
     outFile.close() 
