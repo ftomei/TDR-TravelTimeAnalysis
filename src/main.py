@@ -102,7 +102,7 @@ def importData():
         
 def calibrateCurioni(): 
     global isDataLoaded
-    myPath = filedialog.askdirectory() + "/"
+    myPath = askdirectory() + "/"
     obsFileName = myPath + "obs_density.csv"
     if (not os.path.exists(obsFileName)):
             showerror("Missing file", "It requires observed density (obs_density.csv)")
@@ -150,6 +150,9 @@ def calibrateCurioni():
     vmin = np.array([0, 0, 0], float)
     vmax = np.array([0.1, 1.0, 10.0], float)
     v, estDensity = Marquardt(v0, vmin, vmax, waveForm, obsDensity)
+    aStr.set("{0:.3f}".format(v[0]))
+    bStr.set("{0:.3f}".format(v[1]))
+    cStr.set("{0:.3f}".format(v[2]))
     
     #Print
     for i in range(len(obsDensity)):

@@ -38,9 +38,6 @@ def Marquardt(v0, vmin, vmax, x, yObs):
     yEst = estimate(v, x)
     print ("iterations nr:", nrIter)
     print ("sum of squared residuals:", "{0:.1f}".format(sse))
-    print ("a:", "{0:.3f}".format(v[0]))
-    print ("b:", "{0:.3f}".format(v[1]))
-    print ("c:", "{0:.3f}".format(v[2]))
     return v, yEst
 
 
