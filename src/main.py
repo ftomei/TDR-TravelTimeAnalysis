@@ -5,9 +5,8 @@
 # Authors:
 # Fausto Tomei      ftomei@arpae.it
 # Marco Bittelli    marco.bittelli@unibo.it
-#------------------------------------------------------------------   
-
-from __future__ import print_function, division
+#------------------------------------------------------------------
+from __future__ import division
 
 from readDataFile import readDataFile, readGenericDataFile
 from functions import *
