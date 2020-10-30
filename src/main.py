@@ -109,18 +109,19 @@ def calibrateCurioni():
             showerror("Missing file", "It requires observed density (obs_density.csv)")
             return(False)
     
-    #read obs data
+    # Read obs data
     x, isFileOk = readGenericDataFile(obsFileName, 1, ',', False)
-    soilList = []
     fileList = []
-    obsDensity = np.zeros(len(x))
-    #estDensity = np.zeros(len(x))
+    obsDensityAll = np.zeros(len(x))
+    soilListAll = []
     for i in range(len(x)):
-        soilList.append(x[i][0])
-        fileList.append(soilList[i] + ".dat")
-        obsDensity[i] = x[i][1] 
+        soilListAll.append(x[i][0])
+        fileList.append(soilListAll[i] + ".dat")
+        obsDensityAll[i] = x[i][1] 
     
     waveForm = []
+    soilList = []
+    obsDensity = []
     nrHeaderValues = int(headerNrStr.get())
     outFile= open(myPath + "output.csv","w")
     files = os.listdir(myPath)
@@ -139,6 +140,8 @@ def calibrateCurioni():
                 
                 w = ComputeTT(False) 
                 waveForm.append(w) 
+                soilList.append(soilListAll[i])
+                obsDensity.append(obsDensityAll[i])
       
     #Marquardt
     a = float(aStr.get())
@@ -146,7 +149,7 @@ def calibrateCurioni():
     c = float(cStr.get())
     v0 = np.array([a, b, c], float)
     vmin = np.array([0, 0, 0], float)
-    vmax = np.array([1, 1, 2], float)
+    vmax = np.array([0.1, 1.0, 10.0], float)
     v, estDensity = Marquardt(v0, vmin, vmax, waveForm, obsDensity)
     
     #Print
