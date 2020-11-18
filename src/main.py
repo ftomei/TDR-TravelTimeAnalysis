@@ -156,10 +156,11 @@ def calibrateCurioni():
     
     #Print
     outFile.write("%.3f,%.3f,%.3f\n" %(v[0],v[1],v[2]))
-    outFile.write("soil,bulkPermittivity,v1,vr,obs.density,est.density\n")
+    outFile.write("soil,bulkPermittivity,v1,vr,obs.density,est.density,wc.Topp,wc.Malicki,wc.MixModel,wc.Curioni\n")
     for i in range(len(obsDensity)):
         k = getBulkPermittivity(waveForm[i])
-        outFile.write("%s,%.1f,%.3f,%.3f,%.1f,%.1f\n" % (soilList[i], k, waveForm[i].v1, waveForm[i].vr, obsDensity[i], estDensity[i]))
+        outFile.write("%s,%.1f,%.3f,%.3f,%.1f,%.1f,%.2f,%.2f,%.2f,%.2f\n" % (soilList[i], k, waveForm[i].v1, waveForm[i].vr, obsDensity[i], estDensity[i], 
+        waveForm[i].wcTopp,waveForm[i].wcMalicki,waveForm[i].wcMixModel,waveForm[i].wcCurioni))
     outFile.close() 
 
             
@@ -196,16 +197,16 @@ def ComputeTT(isShow = True):
     w.probeLenght = probeLenght
     w.vp = vp
     bulkPermittivity = getBulkPermittivity(w)
-    wcTopp = getWaterContentTopp(bulkPermittivity)
-    wcMalicki = getWaterContentMalicki(bulkPermittivity, bulkDensity)
-    wcMixModel = getWaterContentMixModel(bulkPermittivity, bulkDensity, 
+    w.wcTopp = getWaterContentTopp(bulkPermittivity)
+    w.wcMalicki = getWaterContentMalicki(bulkPermittivity, bulkDensity)
+    w.wcMixModel = getWaterContentMixModel(bulkPermittivity, bulkDensity, 
                                          solidPermittivity, liquidPermittivity, geomParameter)
 
     w.v1 = abs(tt.p2.y - tt.p1.y)
     w.vf = abs(tt.p3.y + 1)
     w.vr = w.v1 / w.vf
     bdCurioni = getBulkDensityCurioni(w, a, b, c)
-    wcCurioni = getWaterContentCurioni(bulkPermittivity, bdCurioni, a, b)
+    w.wcCurioni = getWaterContentCurioni(bulkPermittivity, bdCurioni, a, b)
     
      #print results
     x0 = tt.p0.x * (1E09)
@@ -223,10 +224,10 @@ def ComputeTT(isShow = True):
     ratioStr.set(format(w.vr, '.3f'))
     estBulkDensityStr.set(format(bdCurioni, ".1f"))
     
-    wcToppStr.set(format(wcTopp, ".3f"))
-    wcMalickiStr.set(format(wcMalicki, ".3f"))
-    wcMixModelStr.set(format(wcMixModel, ".3f"))
-    wcCurioniStr.set(format(wcCurioni, ".3f"))
+    wcToppStr.set(format(w.wcTopp, ".3f"))
+    wcMalickiStr.set(format(w.wcMalicki, ".3f"))
+    wcMixModelStr.set(format(w.wcMixModel, ".3f"))
+    wcCurioniStr.set(format(w.wcCurioni, ".3f"))
     
     if (isShow): 
         cleanDisplay()

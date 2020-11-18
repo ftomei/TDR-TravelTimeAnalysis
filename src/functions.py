@@ -15,6 +15,10 @@ class WaveForm:
     v1 = NODATA
     vf = NODATA
     vr = NODATA
+    wcTopp= NODATA
+    wcMalicky= NODATA
+    wcMixModel= NODATA
+    wcCurioni= NODATA
 
 def getLiquidPermittivity(temperature):
     deltaT = temperature - 25.
@@ -40,7 +44,7 @@ def getWaterContentMixModel(bulkPermittivity, bulkDensity,
 
 def getBulkDensityJung(bulkPermittivity, v1, vf, c1, d1, f1):
     numerator = v1/vf
-    denominator = c1 + d1*(bulkPermittivity-1) - c1*aexp(-f1*(bulkPermittivity-1))
+    denominator = c1 + d1*(bulkPermittivity-1) - c1*exp(-f1*(bulkPermittivity-1))
     return waterDensity * (numerator/denominator)
 
 def getBulkDensityCurioni(waveForm, a, b, c):
@@ -50,5 +54,5 @@ def getBulkDensityCurioni(waveForm, a, b, c):
     return numerator/denominator
     
 def getWaterContentCurioni(bulkPermittivity, bulkDensity, a, b):
-    return (1/b)*(sqrt(bulkPermittivity)*(waterDensity/bulkDensity) - a)
+    return (1/b)*(sqrt(bulkPermittivity)*(waterDensity/bulkDensity) - a)/100.
     
