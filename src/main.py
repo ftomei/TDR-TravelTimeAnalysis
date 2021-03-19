@@ -31,7 +31,7 @@ liquidPermittivity = getLiquidPermittivity(waterTemperature)
 
 mainWindow = Tk()
 mainWindow.title("TDRPy")
-mainWindow.geometry("%dx%d" % (520, 700))
+mainWindow.geometry("%dx%d" % (500, 600))
 
 headerNrStr = StringVar()
 vpStr = StringVar()
@@ -66,9 +66,9 @@ if sys.version_info >= (3, 0):
     waterTempLabel = Label(mainWindow, text="Water temp. [\u00B0C]")
 else:
     waterTempLabel = Label(mainWindow, text="Water temp. [C]")
-waterTempLabel.place(x=80, y=275)
+waterTempLabel.place(x=50, y=295)
 waterTempWidget = Entry(mainWindow, width=6, textvariable=waterTemperatureStr)
-waterTempWidget.place(x=200, y=275)
+waterTempWidget.place(x=190, y=295)
 
 
 def getEpsilonLabel():
@@ -102,71 +102,7 @@ def importData():
         tt.reflecCoeff = tt.normalizeVector(data)
         print("number of values:", len(data))
         isDataLoaded = True
-
-
-def calibrateCurioni():
-    global isDataLoaded
-    myPath = askdirectory() + "/"
-    obsFileName = myPath + "obs_density.csv"
-    if not os.path.exists(obsFileName):
-        showerror("Missing file", "It requires observed density (obs_density.csv)")
-        return (False)
-
-    # Read obs data
-    x, isFileOk = readGenericDataFile(obsFileName, 1, ',', False)
-    fileList = []
-    obsDensityAll = np.zeros(len(x))
-    soilListAll = []
-    for i in range(len(x)):
-        soilListAll.append(x[i][0])
-        fileList.append(soilListAll[i] + ".dat")
-        obsDensityAll[i] = x[i][1]
-
-    waveForm = []
-    soilList = []
-    obsDensity = []
-    nrHeaderValues = int(headerNrStr.get())
-    outFile = open(myPath + "output.csv", "w")
-    files = os.listdir(myPath)
-    for fileName in files:
-        if fileName in fileList:
-            i = fileList.index(fileName)
-            fileName = myPath + fileName
-            x, isFileOk = readDataFile(fileName, nrHeaderValues, '\t', False)
-            if isFileOk:
-                if len(x) == 1:
-                    data = x[0, :]
-                else:
-                    data = x[:, 0]
-                tt.reflecCoeff = tt.normalizeVector(data)
-                isDataLoaded = True
-
-                w = ComputeTT(False)
-                waveForm.append(w)
-                soilList.append(soilListAll[i])
-                obsDensity.append(obsDensityAll[i])
-
-    # Marquardt
-    a = float(aStr.get())
-    b = float(bStr.get())
-    c = float(cStr.get())
-    v0 = np.array([a, b, c], float)
-    vmin = np.array([0, 0, 0], float)
-    vmax = np.array([0.1, 1.0, 10.0], float)
-    v, estDensity = Marquardt(v0, vmin, vmax, waveForm, obsDensity)
-    aStr.set("{0:.3f}".format(v[0]))
-    bStr.set("{0:.3f}".format(v[1]))
-    cStr.set("{0:.3f}".format(v[2]))
-
-    # Print
-    outFile.write("%.3f,%.3f,%.3f\n" % (v[0], v[1], v[2]))
-    outFile.write("soil,bulkPermittivity,v1,vr,obs.density,est.density,wc.Topp,wc.Malicki,wc.MixModel,wc.Curioni\n")
-    for i in range(len(obsDensity)):
-        k = getBulkPermittivity(waveForm[i])
-        outFile.write("%s,%.1f,%.3f,%.3f,%.1f,%.1f,%.2f,%.2f,%.2f,%.2f\n" % (
-            soilList[i], k, waveForm[i].v1, waveForm[i].vr, obsDensity[i], estDensity[i],
-            waveForm[i].wcTopp, waveForm[i].wcMalicki, waveForm[i].wcMixModel, waveForm[i].wcCurioni))
-    outFile.close()
+        ComputeTT(True)
 
 
 def ComputeTT(isShow=True):
@@ -204,14 +140,14 @@ def ComputeTT(isShow=True):
     bulkPermittivity = getBulkPermittivity(w)
     w.wcTopp = getWaterContentTopp(bulkPermittivity)
     w.wcMalicki = getWaterContentMalicki(bulkPermittivity, bulkDensity)
-    w.wcMixModel = getWaterContentMixModel(bulkPermittivity, bulkDensity,
-                                           solidPermittivity, liquidPermittivity, geomParameter)
+    w.wcMixModel = getWaterContentMixModel(bulkPermittivity, bulkDensity, solidPermittivity,
+                                           liquidPermittivity, geomParameter)
 
     w.v1 = abs(tt.p2.y - tt.p1.y)
     w.vf = abs(tt.p3.y + 1)
     w.vr = w.v1 / w.vf
-    bdCurioni = getBulkDensityCurioni(w, a, b, c)
-    w.wcCurioni = getWaterContentCurioni(bulkPermittivity, bdCurioni, a, b)
+    w.bdCurioni = getBulkDensityCurioni(w, a, b, c)
+    w.wcCurioni = getWaterContentCurioni(bulkPermittivity, w.bdCurioni, a, b)
 
     # print results
     x0 = tt.p0.x * 1E09
@@ -227,7 +163,7 @@ def ComputeTT(isShow=True):
     v1Str.set(format(w.v1, '.3f'))
     vfStr.set(format(w.vf, '.3f'))
     ratioStr.set(format(w.vr, '.3f'))
-    estBulkDensityStr.set(format(bdCurioni, ".1f"))
+    estBulkDensityStr.set(format(w.bdCurioni, ".1f"))
 
     wcToppStr.set(format(w.wcTopp, ".3f"))
     wcMalickiStr.set(format(w.wcMalicki, ".3f"))
@@ -241,6 +177,117 @@ def ComputeTT(isShow=True):
         showDisplay()
 
     return w
+
+
+def computeAllWaveform():
+    global isDataLoaded
+
+    myPath = askdirectory() + "/"
+    nrHeaderValues = int(headerNrStr.get())
+
+    # output file
+    outFile = open(myPath + "output.csv", "w")
+    outFile.write("soil code, bulk permittivity, v1, vr, bulk density, "
+                  "wc Topp, wc Malicki, wc MixModel, wc Curioni\n")
+
+    # cycle on files
+    files = os.listdir(myPath)
+    for fileName in files:
+        suffix = fileName[len(fileName) - 3:]
+        if suffix == "dat":
+            soilCode = fileName[:len(fileName) - 4]
+            fileName = myPath + fileName
+            x, isFileOk = readDataFile(fileName, nrHeaderValues, '\t', False)
+            if isFileOk:
+                if len(x) == 1:
+                    data = x[0, :]
+                else:
+                    data = x[:, 0]
+                tt.reflecCoeff = tt.normalizeVector(data)
+                isDataLoaded = True
+                w = ComputeTT(False)
+
+                # compute water content with Curioni bulk density
+                # CHECK
+                bulkPermittivity = getBulkPermittivity(w)
+                w.wcTopp = getWaterContentTopp(bulkPermittivity)
+                w.wcMalicki = getWaterContentMalicki(bulkPermittivity, w.bdCurioni)
+
+                solidPermittivity = float(solidPermittivityStr.get())
+                geomParameter = float(geometricParStr.get())
+                w.wcMixModel = getWaterContentMixModel(bulkPermittivity, w.bdCurioni, solidPermittivity,
+                                                       liquidPermittivity, geomParameter)
+                # output
+                outFile.write("%s,%.2f,%.3f,%.3f,%.1f,%.3f,%.3f,%.3f,%.3f\n" % (
+                    soilCode, bulkPermittivity, w.v1, w.vr, w.bdCurioni, w.wcTopp,
+                    w.wcMalicki, w.wcMixModel, w.wcCurioni))
+
+    outFile.close()
+
+
+def calibrateCurioni():
+    global isDataLoaded
+    myPath = askdirectory() + "/"
+    obsFileName = myPath + "obs_density.csv"
+    if not os.path.exists(obsFileName):
+        showerror("Missing file", "It requires observed density (obs_density.csv)")
+        return False
+
+    # Read obs data
+    x, isFileOk = readGenericDataFile(obsFileName, 1, ',', False)
+    fileList = []
+    obsDensityAll = np.zeros(len(x))
+    soilListAll = []
+    for i in range(len(x)):
+        soilListAll.append(x[i][0])
+        fileList.append(soilListAll[i] + ".dat")
+        obsDensityAll[i] = x[i][1]
+
+    # read waveform
+    waveForm = []
+    soilList = []
+    obsDensity = []
+    nrHeaderValues = int(headerNrStr.get())
+    files = os.listdir(myPath)
+    for fileName in files:
+        if fileName in fileList:
+            i = fileList.index(fileName)
+            fileName = myPath + fileName
+            x, isFileOk = readDataFile(fileName, nrHeaderValues, '\t', False)
+            if isFileOk:
+                if len(x) == 1:
+                    data = x[0, :]
+                else:
+                    data = x[:, 0]
+                tt.reflecCoeff = tt.normalizeVector(data)
+                isDataLoaded = True
+
+                w = ComputeTT(False)
+                waveForm.append(w)
+                soilList.append(soilListAll[i])
+                obsDensity.append(obsDensityAll[i])
+
+    # Marquardt
+    a = float(aStr.get())
+    b = float(bStr.get())
+    c = float(cStr.get())
+    v0 = np.array([a, b, c], float)
+    vmin = np.array([0, 0, 0], float)
+    vmax = np.array([0.1, 1.0, 10.0], float)
+    v, estDensity = Marquardt(v0, vmin, vmax, waveForm, obsDensity)
+    aStr.set("{0:.4f}".format(v[0]))
+    bStr.set("{0:.4f}".format(v[1]))
+    cStr.set("{0:.4f}".format(v[2]))
+
+    # output
+    outFile = open(myPath + "fitting.csv", "w")
+    outFile.write("%.4f,%.4f,%.4f\n" % (v[0], v[1], v[2]))
+    outFile.write("soil code, bulk permittivity, v1, vr, obs density, est density\n")
+    for i in range(len(obsDensity)):
+        k = getBulkPermittivity(waveForm[i])
+        outFile.write("%s,%.2f,%.3f,%.3f,%.1f,%.1f\n" % (
+            soilList[i], k, waveForm[i].v1, waveForm[i].vr, obsDensity[i], estDensity[i]))
+    outFile.close()
 
 
 def main():
@@ -273,87 +320,133 @@ def main():
     wcMixModelStr.set(0)
     wcCurioniStr.set(0)
 
+    posX_col1 = 50
+    posY_col1 = 80
+    posX_col2 = posX_col1 + 240
+    posY_col2 = posY_col1
+
     buttonImport = Button(mainWindow, text="Import data", command=importData)
-    buttonImport.place(x=5, y=15)
+    buttonImport.place(x=posX_col1, y=15)
 
     headerLabel = Label(mainWindow, text="Header values nr.")
-    headerLabel.place(x=100, y=20)
+    headerLabel.place(x=posX_col1 + 80, y=20)
     headerWidget = Entry(mainWindow, width=3, textvariable=headerNrStr)
-    headerWidget.place(x=200, y=20)
+    headerWidget.place(x=posX_col1 + 160, y=20)
     headerWidget.insert(0, "8")
-    headerWidget.pack
 
-    computeTTButton = Button(mainWindow, text="Compute", command=ComputeTT)
-    computeTTButton.place(x=250, y=15)
+    computeTTButton = Button(mainWindow, text="  Compute  ", command=ComputeTT)
+    computeTTButton.place(x=posX_col1 + 220, y=15)
 
     vpLabel = Label(mainWindow, text="Vp [-]")
-    vpLabel.place(x=80, y=80)
+    vpLabel.place(x=posX_col1, y=posY_col1)
     vpWidget = Entry(mainWindow, width=6, textvariable=vpStr)
-    vpWidget.place(x=200, y=80)
+    vpWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
 
     probeLenghtLabel = Label(mainWindow, text="Probe length [m]")
-    probeLenghtLabel.place(x=80, y=105)
+    probeLenghtLabel.place(x=posX_col1, y=posY_col1)
     probeLenghtWidget = Entry(mainWindow, width=6, textvariable=probeLenghtStr)
-    probeLenghtWidget.place(x=200, y=105)
+    probeLenghtWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
 
     winBeginLabel = Label(mainWindow, text="Window begin [m]")
-    winBeginLabel.place(x=80, y=130)
+    winBeginLabel.place(x=posX_col1, y=posY_col1)
     winBeginWidget = Entry(mainWindow, width=6, textvariable=windowBeginStr)
-    winBeginWidget.place(x=200, y=130)
+    winBeginWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
 
     winwidthLabel = Label(mainWindow, text="Window width [m]")
-    winwidthLabel.place(x=80, y=155)
+    winwidthLabel.place(x=posX_col1, y=posY_col1)
     winwidthWidget = Entry(mainWindow, width=6, textvariable=windowWidthStr)
-    winwidthWidget.place(x=200, y=155)
+    winwidthWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
 
     probeHandleLabel = Label(mainWindow, text="Probe handle [m]")
-    probeHandleLabel.place(x=80, y=180)
+    probeHandleLabel.place(x=posX_col1, y=posY_col1)
     probeHandleWidget = Entry(mainWindow, width=6, textvariable=probeHandleStr)
-    probeHandleWidget.place(x=200, y=180)
+    probeHandleWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
 
     epsilonLabel = getEpsilonLabel()
-    epsilonLabel.place(x=80, y=200)
-    epsilonLabel = Label(mainWindow, text="handle")
-    epsilonLabel.place(x=90, y=206)
+    epsilonLabel.place(x=posX_col1, y=posY_col1-6)
+    handleLabel = Label(mainWindow, text="handle")
+    handleLabel.place(x=posX_col1+10, y=posY_col1)
     permittivityWidget = Entry(mainWindow, width=6, textvariable=handlePermittivityStr)
-    permittivityWidget.place(x=200, y=200)
+    permittivityWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 40
 
     # Soil parameters
     SoilParameterLabel = Label(mainWindow, text="Soil parameters", font="helvetica 10 bold", fg="red")
-    SoilParameterLabel.place(x=20, y=225)
+    SoilParameterLabel.place(x=posX_col1 - 20, y=posY_col1)
+    posY_col1 += 25
 
     bulkDensityLabel = Label(mainWindow, text="Bulk density [kg m-3]")
-    bulkDensityLabel.place(x=80, y=250)
+    bulkDensityLabel.place(x=posX_col1, y=posY_col1)
     bulkDensityWidget = Entry(mainWindow, width=6, textvariable=bulkDensityStr)
-    bulkDensityWidget.place(x=200, y=250)
+    bulkDensityWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 50
 
     epsilon2Label = getEpsilonLabel()
-    epsilon2Label.place(x=80, y=295)
+    epsilon2Label.place(x=posX_col1, y=posY_col1-5)
     epsilon2Label = Label(mainWindow, text="liquid")
-    epsilon2Label.place(x=90, y=300)
+    epsilon2Label.place(x=posX_col1 + 10, y=posY_col1)
     liquidPermittivityLabel = Label(mainWindow, textvariable=liquidPermittivityStr)
-    liquidPermittivityLabel.place(x=200, y=300)
+    liquidPermittivityLabel.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
 
     epsilon3Label = getEpsilonLabel()
-    epsilon3Label.place(x=80, y=320)
+    epsilon3Label.place(x=posX_col1, y=posY_col1-5)
     epsilon3Label = Label(mainWindow, text="solid")
-    epsilon3Label.place(x=90, y=325)
+    epsilon3Label.place(x=posX_col1 + 10, y=posY_col1)
     solidPermittivityWidget = Entry(mainWindow, width=6, textvariable=solidPermittivityStr)
-    solidPermittivityWidget.place(x=200, y=325)
+    solidPermittivityWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
 
     geometricParLabel = Label(mainWindow, text="alpha (geom. param.)")
-    geometricParLabel.place(x=80, y=350)
+    geometricParLabel.place(x=posX_col1, y=posY_col1)
     geometricParWidget = Entry(mainWindow, width=6, textvariable=geometricParStr)
-    geometricParWidget.place(x=200, y=350)
+    geometricParWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 40
 
-    # Curioni parameter
-    posY_col2 = 225
-    posX_col2 = 320
+    # travel time output 
+    ttResultsLabel = Label(mainWindow, text="Travel Time results", font="helvetica 10 bold", fg="blue")
+    ttResultsLabel.place(x=posX_col1 - 20, y=posY_col1)
+    posY_col1 += 25
+
+    point0Label = Label(mainWindow, text="point 0 x [ns]")
+    point0Label.place(x=posX_col1, y=posY_col1)
+    point0Widget = Label(mainWindow, width=6, textvariable=point0XStr)
+    point0Widget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
+
+    point1Label = Label(mainWindow, text="point 1 x [ns]")
+    point1Label.place(x=posX_col1, y=posY_col1)
+    point1Widget = Label(mainWindow, width=6, textvariable=point1XStr)
+    point1Widget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
+
+    point2Label = Label(mainWindow, text="point 2 x [ns]")
+    point2Label.place(x=posX_col1, y=posY_col1)
+    point2Widget = Label(mainWindow, width=6, textvariable=point2XStr)
+    point2Widget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
+
+    ttLabel = Label(mainWindow, text="Travel Time [ns]")
+    ttLabel.place(x=posX_col1, y=posY_col1)
+    ttWidget = Label(mainWindow, width=6, textvariable=ttStr)
+    ttWidget.place(x=posX_col1 + 140, y=posY_col1)
+    posY_col1 += 25
+
+    bulkPermittivityLabel = Label(mainWindow, text="Bulk permittivity")
+    bulkPermittivityLabel.place(x=posX_col1, y=posY_col1)
+    bulkPermittivityWidget = Label(mainWindow, width=6, textvariable=bulkPermittivityStr)
+    bulkPermittivityWidget.place(x=posX_col1 + 140, y=posY_col1)
+
+    # Column 2: Curioni parameter
     bdParamLabel = Label(mainWindow, text="Curioni parameters", font="helvetica 10 bold", fg="red")
-    bdParamLabel.place(x=300, y=posY_col2)
+    bdParamLabel.place(x=posX_col2 - 20, y=posY_col2)
     buttonCurioni = Button(mainWindow, text="Fitting", command=calibrateCurioni)
-    buttonCurioni.place(x=430, y=posY_col2 - 2)
-
+    buttonCurioni.place(x=posX_col2 + 120, y=posY_col2 - 2)
     posY_col2 += 35
 
     aLabel = Label(mainWindow, text="a [-]")
@@ -372,79 +465,15 @@ def main():
     cLabel.place(x=posX_col2, y=posY_col2)
     cWidget = Entry(mainWindow, width=6, textvariable=cStr)
     cWidget.place(x=posX_col2 + 120, y=posY_col2)
-    posY_col2 += 25
+    posY_col2 += 30
 
-    posY_col1 = 375
-    posY_col2 = 375
-    posX_col2 = 320
-
-    # travel time output 
-    ttResultsLabel = Label(mainWindow, text="Travel Time results", font="helvetica 10 bold", fg="blue")
-    ttResultsLabel.place(x=20, y=posY_col1)
-    posY_col1 += 25
-
-    point0Label = Label(mainWindow, text="point 0 x [ns]")
-    point0Label.place(x=80, y=posY_col1)
-    point0Widget = Label(mainWindow, width=6, textvariable=point0XStr)
-    point0Widget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    point1Label = Label(mainWindow, text="point 1 x [ns]")
-    point1Label.place(x=80, y=posY_col1)
-    point1Widget = Label(mainWindow, width=6, textvariable=point1XStr)
-    point1Widget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    point2Label = Label(mainWindow, text="point 2 x [ns]")
-    point2Label.place(x=80, y=posY_col1)
-    point2Widget = Label(mainWindow, width=6, textvariable=point2XStr)
-    point2Widget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    ttLabel = Label(mainWindow, text="Travel Time [ns]")
-    ttLabel.place(x=80, y=posY_col1)
-    ttWidget = Label(mainWindow, width=6, textvariable=ttStr)
-    ttWidget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    bulkPermittivityLabel = Label(mainWindow, text="Bulk permittivity")
-    bulkPermittivityLabel.place(x=80, y=posY_col1)
-    bulkPermittivityWidget = Label(mainWindow, width=6, textvariable=bulkPermittivityStr)
-    bulkPermittivityWidget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    # Water content output
-    wcLabel = Label(mainWindow, text="Water Content", font="helvetica 10 bold", fg="blue")
-    wcLabel.place(x=20, y=posY_col1)
-    posY_col1 += 25
-
-    ToppLabel = Label(mainWindow, text="Topp")
-    ToppLabel.place(x=80, y=posY_col1)
-    ToppWidget = Label(mainWindow, width=6, textvariable=wcToppStr)
-    ToppWidget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    MalickiLabel = Label(mainWindow, text="Malicki")
-    MalickiLabel.place(x=80, y=posY_col1)
-    MalickiWidget = Label(mainWindow, width=6, textvariable=wcMalickiStr)
-    MalickiWidget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    dielecMixModelLabel = Label(mainWindow, text="Diel. mix model")
-    dielecMixModelLabel.place(x=80, y=posY_col1)
-    dielecMixModelWidget = Label(mainWindow, width=6, textvariable=wcMixModelStr)
-    dielecMixModelWidget.place(x=200, y=posY_col1)
-    posY_col1 += 25
-
-    CurioniLabel = Label(mainWindow, text="Curioni")
-    CurioniLabel.place(x=80, y=posY_col1)
-    CurioniWcWidget = Label(mainWindow, width=6, textvariable=wcCurioniStr)
-    CurioniWcWidget.place(x=200, y=posY_col1)
-    posY_col1 += 25
+    computeAll = Button(mainWindow, text="Compute all waveform", command=computeAllWaveform)
+    computeAll.place(x=posX_col2, y=posY_col2)
+    posY_col2 += 50
 
     # Bulk density
     densityLabel = Label(mainWindow, text="Bulk density", font="helvetica 10 bold", fg="blue")
-    densityLabel.place(x=300, y=posY_col2)
+    densityLabel.place(x=posX_col2 - 20, y=posY_col2)
     posY_col2 += 25
 
     v1Label = Label(mainWindow, text="V1 [-]")
@@ -470,6 +499,35 @@ def main():
     estBulkDensityWidget = Label(mainWindow, width=6, textvariable=estBulkDensityStr)
     estBulkDensityWidget.place(x=posX_col2 + 120, y=posY_col2)
     posY_col2 += 25
+    posY_col2 += 40
+
+    # Water content
+    wcLabel = Label(mainWindow, text="Water Content", font="helvetica 10 bold", fg="blue")
+    wcLabel.place(x=posX_col2 - 20, y=posY_col2)
+    posY_col2 += 25
+
+    ToppLabel = Label(mainWindow, text="Topp")
+    ToppLabel.place(x=posX_col2, y=posY_col2)
+    ToppWidget = Label(mainWindow, width=6, textvariable=wcToppStr)
+    ToppWidget.place(x=posX_col2 + 120, y=posY_col2)
+    posY_col2 += 25
+
+    MalickiLabel = Label(mainWindow, text="Malicki")
+    MalickiLabel.place(x=posX_col2, y=posY_col2)
+    MalickiWidget = Label(mainWindow, width=6, textvariable=wcMalickiStr)
+    MalickiWidget.place(x=posX_col2 + 120, y=posY_col2)
+    posY_col2 += 25
+
+    dielecMixModelLabel = Label(mainWindow, text="Diel. mix model")
+    dielecMixModelLabel.place(x=posX_col2, y=posY_col2)
+    dielecMixModelWidget = Label(mainWindow, width=6, textvariable=wcMixModelStr)
+    dielecMixModelWidget.place(x=posX_col2 + 120, y=posY_col2)
+    posY_col2 += 25
+
+    CurioniLabel = Label(mainWindow, text="Curioni")
+    CurioniLabel.place(x=posX_col2, y=posY_col2)
+    CurioniWcWidget = Label(mainWindow, width=6, textvariable=wcCurioniStr)
+    CurioniWcWidget.place(x=posX_col2 + 120, y=posY_col2)
 
     mainWindow.bind("<Leave>", checkTWater)
     mainWindow.protocol("WM_DELETE_WINDOW", mainWindow.destroy)

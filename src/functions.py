@@ -20,6 +20,7 @@ class WaveForm:
     wcMalicky = NODATA
     wcMixModel = NODATA
     wcCurioni = NODATA
+    bdCurioni = NODATA
 
 
 def getLiquidPermittivity(temperature):

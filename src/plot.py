@@ -8,15 +8,15 @@ import matplotlib.pyplot as plt
 
 def cleanDisplay():
     plt.close()
-    plt.figure(figsize=(10, 7))
+    plt.figure(figsize=(9, 6))
 
 
 def showDisplay():
     plt.title("")
-    plt.xlabel("Time [ns]", fontsize=16, labelpad=16)
-    plt.ylabel("Reflection coefficient [-]", fontsize=16, labelpad=16)
-    plt.tick_params(axis='both', which='major', labelsize=12, pad=8)
-    plt.tick_params(axis='both', which='minor', labelsize=12, pad=8)
+    plt.xlabel("Time [ns]", fontsize=12, labelpad=12)
+    plt.ylabel("Reflection coefficient [-]", fontsize=12, labelpad=12)
+    plt.tick_params(axis='both', which='major', labelsize=10, pad=8)
+    plt.tick_params(axis='both', which='minor', labelsize=10, pad=8)
     plt.ylim(bottom=-1, top=1)
     plt.show()
 
