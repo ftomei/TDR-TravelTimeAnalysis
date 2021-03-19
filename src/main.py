@@ -323,19 +323,21 @@ def main():
     posX_col1 = 50
     posY_col1 = 80
     posX_col2 = posX_col1 + 240
-    posY_col2 = posY_col1
+    posY_col2 = posY_col1 + 30
 
     buttonImport = Button(mainWindow, text="Import data", command=importData)
-    buttonImport.place(x=posX_col1, y=15)
+    buttonImport.place(x=posX_col1 - 20, y=15)
 
     headerLabel = Label(mainWindow, text="Header values nr.")
-    headerLabel.place(x=posX_col1 + 80, y=20)
+    headerLabel.place(x=posX_col1 + 60, y=20)
     headerWidget = Entry(mainWindow, width=3, textvariable=headerNrStr)
-    headerWidget.place(x=posX_col1 + 160, y=20)
+    headerWidget.place(x=posX_col1 + 140, y=20)
     headerWidget.insert(0, "8")
 
-    computeTTButton = Button(mainWindow, text="  Compute  ", command=ComputeTT)
-    computeTTButton.place(x=posX_col1 + 220, y=15)
+    computeTTButton = Button(mainWindow, text="Update", command=ComputeTT)
+    computeTTButton.place(x=posX_col2 - 20, y=15)
+    computeAll = Button(mainWindow, text="Compute all waveform", command=computeAllWaveform)
+    computeAll.place(x=posX_col2 - 20, y=45)
 
     vpLabel = Label(mainWindow, text="Vp [-]")
     vpLabel.place(x=posX_col1, y=posY_col1)
@@ -465,10 +467,6 @@ def main():
     cLabel.place(x=posX_col2, y=posY_col2)
     cWidget = Entry(mainWindow, width=6, textvariable=cStr)
     cWidget.place(x=posX_col2 + 120, y=posY_col2)
-    posY_col2 += 30
-
-    computeAll = Button(mainWindow, text="Compute all waveform", command=computeAllWaveform)
-    computeAll.place(x=posX_col2, y=posY_col2)
     posY_col2 += 50
 
     # Bulk density
