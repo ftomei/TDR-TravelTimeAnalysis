@@ -38,8 +38,6 @@ vpStr = StringVar()
 probeLenghtStr = StringVar()
 windowBeginStr = StringVar()
 windowWidthStr = StringVar()
-probeHandleStr = StringVar()
-handlePermittivityStr = StringVar()
 point0XStr = StringVar()
 point1XStr = StringVar()
 point2XStr = StringVar()
@@ -116,8 +114,6 @@ def ComputeTT(isShow=True):
     probeLenght = float(probeLenghtStr.get())
     windowBegin = float(windowBeginStr.get())
     windowWidth = float(windowWidthStr.get())
-    probeHandle = float(probeHandleStr.get())
-    handlePermittivity = float(handlePermittivityStr.get())
     bulkDensity = float(bulkDensityStr.get())
     solidPermittivity = float(solidPermittivityStr.get())
     geomParameter = float(geometricParStr.get())
@@ -127,9 +123,9 @@ def ComputeTT(isShow=True):
 
     # compute
     nrPoints = len(tt.reflecCoeff)
-    tt.WF_parameters(vp, probeHandle, windowBegin, windowWidth, nrPoints)
+    tt.WF_parameters(vp, windowBegin, windowWidth, nrPoints)
 
-    if not tt.computeTravelTime(probeHandle, handlePermittivity, vp):
+    if not tt.computeTravelTime():
         showerror("Warning", "Wrong data, header or parameter")
         return
 
@@ -295,8 +291,6 @@ def main():
     probeLenghtStr.set(0.1)
     windowBeginStr.set(0.)
     windowWidthStr.set(3.)
-    probeHandleStr.set(0.120)
-    handlePermittivityStr.set(1.7)
     point0XStr.set(0)
     point1XStr.set(0)
     point2XStr.set(0)
@@ -321,9 +315,9 @@ def main():
     wcCurioniStr.set(0)
 
     posX_col1 = 50
-    posY_col1 = 80
+    posY_col1 = 120
     posX_col2 = posX_col1 + 240
-    posY_col2 = posY_col1 + 30
+    posY_col2 = posY_col1 - 10
 
     buttonImport = Button(mainWindow, text="Import data", command=importData)
     buttonImport.place(x=posX_col1 - 20, y=15)
@@ -361,21 +355,7 @@ def main():
     winwidthLabel.place(x=posX_col1, y=posY_col1)
     winwidthWidget = Entry(mainWindow, width=6, textvariable=windowWidthStr)
     winwidthWidget.place(x=posX_col1 + 140, y=posY_col1)
-    posY_col1 += 25
-
-    probeHandleLabel = Label(mainWindow, text="Probe handle [m]")
-    probeHandleLabel.place(x=posX_col1, y=posY_col1)
-    probeHandleWidget = Entry(mainWindow, width=6, textvariable=probeHandleStr)
-    probeHandleWidget.place(x=posX_col1 + 140, y=posY_col1)
-    posY_col1 += 25
-
-    epsilonLabel = getEpsilonLabel()
-    epsilonLabel.place(x=posX_col1, y=posY_col1-6)
-    handleLabel = Label(mainWindow, text="handle")
-    handleLabel.place(x=posX_col1+10, y=posY_col1)
-    permittivityWidget = Entry(mainWindow, width=6, textvariable=handlePermittivityStr)
-    permittivityWidget.place(x=posX_col1 + 140, y=posY_col1)
-    posY_col1 += 40
+    posY_col1 += 50
 
     # Soil parameters
     SoilParameterLabel = Label(mainWindow, text="Soil parameters", font="helvetica 10 bold", fg="red")

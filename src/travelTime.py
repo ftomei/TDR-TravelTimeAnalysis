@@ -83,7 +83,7 @@ def normalizeVector(y):
     return y - avgFirstValues
 
 
-def WF_parameters(Vp, probeHandle, windowBegin, windowWidth, nrPoints):
+def WF_parameters(Vp, windowBegin, windowWidth, nrPoints):
     global deltaTime, deltaSpace, timeVector
     # abs. time [s] corresponding to the 1st point
     firstPointTime = 2. * windowBegin / (SPEED_OF_LIGHT * Vp)
@@ -176,7 +176,7 @@ def lineIntersection(l1, l2):
     return myPoint
 
 
-def computeTravelTime(probeHandle, permittivity, Vp):
+def computeTravelTime():
     global dy, dy2, line1, line2, lastFlatLine
     global p0, p1, p2, p3
 
